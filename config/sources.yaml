@@ -1,0 +1,360 @@
+# Inflation-expectations source catalog (spec section 3).
+#
+# This is the single source of truth for what series exist, where they come
+# from, and how to interpret them. Downloader modules (src/data/*.py) read
+# this file rather than hard-coding series lists; feature/transform code
+# reads `inflation_concept` and `horizon_months` to decide how to compare
+# series that are NOT economically identical (CPI vs PCE vs "prices in
+# general"; compensation vs survey expectation vs model estimate).
+#
+# Fields:
+#   source_family        household | professional | market | business | model
+#   series_name           human-readable
+#   series_id              provider's native id/key
+#   provider                FRED | NYFED | PHILLYFED | ATLANTAFED
+#   horizon_months          approx forecast horizon in months (int or [lo,hi])
+#   inflation_concept       cpi | pce | prices_in_general | mixed
+#   frequency               daily | monthly | quarterly | semiannual
+#   units                   percent
+#   availability_start      earliest reliable observation date (ISO)
+#   download_method          module.function implementing retrieval
+#   release_timing_method    same_day | next_business_day | scheduled_release
+#   target_anchor            Fed-consistent numeric anchor for this concept, or null
+#   notes
+
+market_based:
+  - source_family: market
+    series_name: "5-Year Breakeven Inflation Rate"
+    series_id: T5YIE
+    provider: FRED
+    horizon_months: 60
+    inflation_concept: cpi
+    frequency: daily
+    units: percent
+    availability_start: "2003-01-02"
+    download_method: "src.data.fred.get_fred_series"
+    release_timing_method: same_day
+    target_anchor: 2.0
+    notes: >
+      Inflation COMPENSATION (nominal minus TIPS yield), not a pure
+      expectation: contains inflation-risk premium and TIPS liquidity
+      premium. CPI-linked (TIPS reference CPI-U), not PCE.
+
+  - source_family: market
+    series_name: "10-Year Breakeven Inflation Rate"
+    series_id: T10YIE
+    provider: FRED
+    horizon_months: 120
+    inflation_concept: cpi
+    frequency: daily
+    units: percent
+    availability_start: "2003-01-02"
+    download_method: "src.data.fred.get_fred_series"
+    release_timing_method: same_day
+    target_anchor: 2.0
+    notes: "Same caveats as T5YIE; longer horizon, thinner liquidity premium typically larger."
+
+  - source_family: market
+    series_name: "5-Year, 5-Year Forward Inflation Expectation Rate"
+    series_id: T5YIFR
+    provider: FRED
+    horizon_months: [60, 120]
+    inflation_concept: cpi
+    frequency: daily
+    units: percent
+    availability_start: "2003-01-02"
+    download_method: "src.data.fred.get_fred_series"
+    release_timing_method: same_day
+    target_anchor: 2.0
+    notes: >
+      Forward-implied compensation for the 5-10yr window; the FOMC's own
+      most-cited long-run market anchoring gauge historically. Still
+      compensation, not pure expectations.
+
+model_based:
+  - source_family: model
+    series_name: "Cleveland Fed 1-Year Expected Inflation"
+    series_id: EXPINF1YR
+    provider: FRED
+    horizon_months: 12
+    inflation_concept: cpi
+    frequency: monthly
+    units: percent
+    availability_start: "1982-01-01"
+    download_method: "src.data.fred.get_fred_series"
+    release_timing_method: scheduled_release
+    target_anchor: 2.0
+    notes: >
+      Cleveland Fed model combining Treasury yields, inflation swaps,
+      inflation data and Michigan/SPF surveys. Mechanically correlated with
+      both market and survey families below -- flag in interpretation.
+
+  - source_family: model
+    series_name: "Cleveland Fed 5-Year Expected Inflation"
+    series_id: EXPINF5YR
+    provider: FRED
+    horizon_months: 60
+    inflation_concept: cpi
+    frequency: monthly
+    units: percent
+    availability_start: "1982-01-01"
+    download_method: "src.data.fred.get_fred_series"
+    release_timing_method: scheduled_release
+    target_anchor: 2.0
+    notes: "See EXPINF1YR notes."
+
+  - source_family: model
+    series_name: "Cleveland Fed 10-Year Expected Inflation"
+    series_id: EXPINF10YR
+    provider: FRED
+    horizon_months: 120
+    inflation_concept: cpi
+    frequency: monthly
+    units: percent
+    availability_start: "1982-01-01"
+    download_method: "src.data.fred.get_fred_series"
+    release_timing_method: scheduled_release
+    target_anchor: 2.0
+    notes: "See EXPINF1YR notes."
+
+  - source_family: model
+    series_name: "Cleveland Fed 30-Year Expected Inflation"
+    series_id: EXPINF30YR
+    provider: FRED
+    horizon_months: 360
+    inflation_concept: cpi
+    frequency: monthly
+    units: percent
+    availability_start: "1982-01-01"
+    download_method: "src.data.fred.get_fred_series"
+    release_timing_method: scheduled_release
+    target_anchor: 2.0
+    notes: "See EXPINF1YR notes."
+
+  - source_family: model
+    series_name: "Aruoba Term Structure of Inflation Expectations (ATSIX)"
+    series_id: ATSIX
+    provider: PHILLYFED
+    horizon_months: [3, 120]
+    inflation_concept: cpi
+    frequency: monthly
+    units: percent
+    availability_start: "1998-01-01"
+    download_method: "src.data.atsix.get_atsix"
+    release_timing_method: scheduled_release
+    target_anchor: 2.0
+    notes: >
+      Smooth curve estimated from a combination of professional survey and
+      market data; belongs to model/professional family, not an independent
+      primitive survey.
+
+household:
+  - source_family: household
+    series_name: "Michigan Survey 1-Year Expected Inflation (median)"
+    series_id: MICH
+    provider: FRED
+    horizon_months: 12
+    inflation_concept: prices_in_general
+    frequency: monthly
+    units: percent
+    availability_start: "1978-01-01"
+    download_method: "src.data.fred.get_fred_series"
+    release_timing_method: scheduled_release
+    target_anchor: null
+    notes: >
+      University of Michigan Surveys of Consumers, median expected change in
+      prices over next 12 months. "Prices in general" concept, not
+      CPI/PCE-specific; historically noisy and sensitive to gasoline prices.
+
+  - source_family: household
+    series_name: "Michigan Survey 5-10 Year Expected Inflation (median)"
+    series_id: MICH_5YR
+    provider: MANUAL_OPTIONAL
+    horizon_months: [60, 120]
+    inflation_concept: prices_in_general
+    frequency: monthly
+    units: percent
+    availability_start: "1990-01-01"
+    download_method: null
+    release_timing_method: scheduled_release
+    target_anchor: null
+    notes: >
+      NOT retrieved automatically: no lawful, stable machine-readable public
+      endpoint identified (Michigan's own long-run series is behind a
+      licensed data subscription). Left as an optional manual-loader stub
+      (src/data/michigan_longrun.py) and used only in direct-mention /
+      qualitative discussion, never silently substituted with another
+      series or fabricated.
+
+professional:
+  - source_family: professional
+    series_name: "SPF CPI Inflation, 10-Year Median"
+    series_id: CPI10
+    provider: PHILLYFED
+    horizon_months: 120
+    inflation_concept: cpi
+    frequency: quarterly
+    units: percent
+    availability_start: "1991-10-01"
+    download_method: "src.data.philly_spf.get_spf_series"
+    release_timing_method: scheduled_release
+    target_anchor: 2.0
+    notes: "Median across professional forecasters; long-run anchoring gauge."
+
+  - source_family: professional
+    series_name: "SPF CPI Inflation, 5-Year Median"
+    series_id: CPI5YR
+    provider: PHILLYFED
+    horizon_months: 60
+    inflation_concept: cpi
+    frequency: quarterly
+    units: percent
+    availability_start: "2005-07-01"
+    download_method: "src.data.philly_spf.get_spf_series"
+    release_timing_method: scheduled_release
+    target_anchor: 2.0
+    notes: "See CPI10."
+
+  - source_family: professional
+    series_name: "SPF PCE Inflation, 10-Year Median"
+    series_id: PCE10
+    provider: PHILLYFED
+    horizon_months: 120
+    inflation_concept: pce
+    frequency: quarterly
+    units: percent
+    availability_start: "2007-01-01"
+    download_method: "src.data.philly_spf.get_spf_series"
+    release_timing_method: scheduled_release
+    target_anchor: 2.0
+    notes: "PCE concept matches the FOMC's own mandate variable most directly."
+
+  - source_family: professional
+    series_name: "SPF PCE Inflation, 5-Year Median"
+    series_id: PCE5YR
+    provider: PHILLYFED
+    horizon_months: 60
+    inflation_concept: pce
+    frequency: quarterly
+    units: percent
+    availability_start: "2007-01-01"
+    download_method: "src.data.philly_spf.get_spf_series"
+    release_timing_method: scheduled_release
+    target_anchor: 2.0
+    notes: "See PCE10."
+
+  - source_family: professional
+    series_name: "SPF PCE Inflation, 1-Year"
+    series_id: PCE1YR
+    provider: PHILLYFED
+    horizon_months: 12
+    inflation_concept: pce
+    frequency: quarterly
+    units: percent
+    availability_start: "2007-01-01"
+    download_method: "src.data.philly_spf.get_spf_series"
+    release_timing_method: scheduled_release
+    target_anchor: 2.0
+    notes: "Proxied by the SPF 'PCEB' column (next-calendar-year average headline PCE forecast)."
+
+  - source_family: professional
+    series_name: "SPF CPI Inflation, 1-Year"
+    series_id: CPI1YR
+    provider: PHILLYFED
+    horizon_months: 12
+    inflation_concept: cpi
+    frequency: quarterly
+    units: percent
+    availability_start: "1981-07-01"
+    download_method: "src.data.philly_spf.get_spf_series"
+    release_timing_method: scheduled_release
+    target_anchor: 2.0
+    notes: >
+      Proxied by the SPF "CPIB" column (next-calendar-year average headline
+      CPI forecast) from the Median_CPI_Level.xlsx file, since that file's
+      CPI1..CPI6 columns are noisier quarter-ahead annualized rates rather
+      than a genuine one-year-ahead point forecast.
+
+  - source_family: professional
+    series_name: "Livingston Survey 10-Year CPI Inflation"
+    series_id: LIV_CPI10
+    provider: PHILLYFED
+    horizon_months: 120
+    inflation_concept: cpi
+    frequency: semiannual
+    units: percent
+    availability_start: "1990-01-01"
+    download_method: "src.data.livingston.get_livingston_series"
+    release_timing_method: scheduled_release
+    target_anchor: 2.0
+    notes: >
+      Oldest continuous US professional-forecaster survey (since 1946 for
+      some variables); semiannual (June/December), so deliberately excluded
+      from high-frequency regressions as a dominant regressor -- used as a
+      long-history robustness/cross-check series only.
+
+business:
+  - source_family: business
+    series_name: "Atlanta Fed Business Inflation Expectations, Year-Ahead Unit Costs"
+    series_id: ATL_BIE_YOY
+    provider: ATLANTAFED
+    horizon_months: 12
+    inflation_concept: prices_in_general
+    frequency: monthly
+    units: percent
+    availability_start: "2011-10-01"
+    download_method: "src.data.atlanta_bie.get_atlanta_bie"
+    release_timing_method: scheduled_release
+    target_anchor: null
+    notes: >
+      Firms' expected year-ahead unit cost growth from the Atlanta Fed BIE
+      survey. Public chart-pack/series extraction only; de-identified
+      microdata requires a separate researcher request and is out of scope.
+      OPTIONAL module -- pipeline must not fail if unavailable.
+
+fed_communications:
+  - source_family: communications
+    series_name: "Federal Reserve Board Speeches"
+    series_id: FRB_SPEECHES
+    provider: FEDERALRESERVE
+    horizon_months: null
+    inflation_concept: null
+    frequency: irregular
+    units: null
+    availability_start: "1996-01-01"
+    download_method: "src.data.fed_speeches.get_speeches"
+    release_timing_method: same_day
+    target_anchor: null
+    notes: >
+      Covers Board of Governors members reliably; regional Reserve Bank
+      president speeches are NOT comprehensively archived here (coverage
+      selection issue -- documented, see README). Architecture supports
+      later bank-specific adapters.
+
+  - source_family: communications
+    series_name: "FOMC Minutes"
+    series_id: FOMC_MINUTES
+    provider: FEDERALRESERVE
+    horizon_months: null
+    inflation_concept: null
+    frequency: "8x/year"
+    units: null
+    availability_start: "1993-01-01"
+    download_method: "src.data.fomc.get_minutes"
+    release_timing_method: scheduled_release
+    target_anchor: null
+    notes: "Retains both meeting/decision date and minutes publication date (~3 weeks later)."
+
+  - source_family: communications
+    series_name: "FOMC Statements"
+    series_id: FOMC_STATEMENTS
+    provider: FEDERALRESERVE
+    horizon_months: null
+    inflation_concept: null
+    frequency: "8x/year"
+    units: null
+    availability_start: "1994-01-01"
+    download_method: "src.data.fomc.get_statements"
+    release_timing_method: same_day
+    target_anchor: null
+    notes: "Standardized, cleaner robustness series vs. the noisier speech corpus."
