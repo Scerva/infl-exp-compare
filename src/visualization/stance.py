@@ -139,7 +139,7 @@ def plot_stance_over_time_rescaled(
         h2, l2 = ax2.get_legend_handles_labels()
         handles, labels = handles + h2, labels + l2
 
-    ax.legend(handles, labels, loc="upper left", fontsize=8, frameon=False)
+    ax.legend(handles, labels, loc="lower left", fontsize=8, frameon=False)
     n_clipped = int(((relevant["stance_score"] < stance_ylim[0]) | (relevant["stance_score"] > stance_ylim[1])).sum())
     if n_clipped:
         ax.annotate(
