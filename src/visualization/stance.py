@@ -67,6 +67,7 @@ def plot_stance_over_time_rescaled(
     rolling_window: int = 10,
     fed_funds_df: pd.DataFrame | None = None,
     stance_ylim: tuple[float, float] = (-0.2, 0.2),
+    start_date: str | pd.Timestamp | None = "2004-01-01",
 ) -> None:
     """Figure 3b: same chart as plot_stance_over_time, with the stance
     axis clipped to a fixed, readable range instead of autoscaling to
@@ -83,11 +84,22 @@ def plot_stance_over_time_rescaled(
     comparably alongside the federal funds rate axis. The <2% of points
     outside this range are cropped, not hidden data -- see Figure 3 for
     the unclipped version.
+
+    ``start_date`` crops the x-axis (default 2004, past the thin/noisy
+    1996-2003 tail of the corpus). The federal-funds-rate axis is
+    plotted with SYMMETRIC limits (-max, +max) so its zero sits at the
+    vertical center of the plot, exactly where the stance axis's zero
+    already sits (stance_ylim is symmetric by construction) -- the two
+    zero-lines align at the same height even though the funds rate
+    itself never goes negative, which leaves the bottom half of that
+    axis empty by design, not by accident.
     """
     apply_paper_style()
     fig, ax = plt.subplots(figsize=(11, 5))
     df = documents_df.sort_values("event_date")
     relevant = df[df["monetary_policy_relevance"] >= 0.10]
+    if start_date is not None:
+        relevant = relevant[relevant["event_date"] >= pd.Timestamp(start_date)]
 
     ax.scatter(
         relevant["event_date"], relevant["stance_score"],
@@ -99,6 +111,8 @@ def plot_stance_over_time_rescaled(
             label=f"{rolling_window}-document rolling mean", zorder=4)
     ax.axhline(0, color=GRID_COLOR, linewidth=1.0, zorder=0)
     ax.set_ylim(*stance_ylim)
+    if start_date is not None and len(relevant):
+        ax.set_xlim(pd.Timestamp(start_date), relevant["event_date"].max())
 
     if len(relevant):
         add_episode_shading(ax, relevant["event_date"].min(), relevant["event_date"].max())
@@ -108,14 +122,18 @@ def plot_stance_over_time_rescaled(
 
     handles, labels = ax.get_legend_handles_labels()
     if fed_funds_df is not None and not fed_funds_df.empty:
+        ffr = fed_funds_df
+        if start_date is not None:
+            ffr = ffr[ffr["date"] >= pd.Timestamp(start_date)]
         ax2 = ax.twinx()
         ax2.plot(
-            fed_funds_df["date"], fed_funds_df["value"],
+            ffr["date"], ffr["value"],
             color=CATEGORICAL_PALETTE[0], linewidth=1.8, linestyle="--", alpha=0.9,
             label="Effective federal funds rate (%)", zorder=2,
         )
         ax2.set_ylabel("Effective federal funds rate (%)")
-        ax2.set_ylim(bottom=0)
+        ffr_max = float(ffr["value"].max()) * 1.05 if not ffr.empty else 1.0
+        ax2.set_ylim(-ffr_max, ffr_max)
         ax2.grid(False)
         ax2.spines["top"].set_visible(False)
         h2, l2 = ax2.get_legend_handles_labels()
