@@ -7,7 +7,15 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from src.visualization.style import CATEGORICAL_PALETTE, add_episode_shading, apply_paper_style
+from src.visualization.style import (
+    CATEGORICAL_PALETTE,
+    DIVERGING_CMAP,
+    GRID_COLOR,
+    SURFACE,
+    TEXT_PRIMARY,
+    add_episode_shading,
+    apply_paper_style,
+)
 
 
 def plot_series_by_family(
@@ -42,7 +50,7 @@ def plot_series_by_family(
 
     ax.set_title(title)
     ax.set_ylabel(ylabel)
-    ax.axhline(0, color="#c3c2b7", linewidth=0.8, zorder=0) if standardized else None
+    ax.axhline(0, color=GRID_COLOR, linewidth=1.0, zorder=0) if standardized else None
     ax.legend(loc="upper left", fontsize=8, ncol=2, frameon=False)
     fig.tight_layout()
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -53,7 +61,7 @@ def plot_series_by_family(
 def plot_correlation_heatmap(corr: pd.DataFrame, title: str, out_path: Path) -> None:
     apply_paper_style()
     fig, ax = plt.subplots(figsize=(9, 8))
-    im = ax.imshow(corr.values, cmap="RdBu_r", vmin=-1, vmax=1)
+    im = ax.imshow(corr.values, cmap=DIVERGING_CMAP, vmin=-1, vmax=1)
     ax.set_xticks(range(len(corr.columns)))
     ax.set_xticklabels(corr.columns, rotation=90, fontsize=7)
     ax.set_yticks(range(len(corr.index)))
@@ -63,7 +71,7 @@ def plot_correlation_heatmap(corr: pd.DataFrame, title: str, out_path: Path) -> 
             val = corr.values[i, j]
             if pd.notna(val):
                 ax.text(j, i, f"{val:.2f}", ha="center", va="center", fontsize=5.5,
-                        color="white" if abs(val) > 0.6 else "#0b0b0b")
+                        color=SURFACE if abs(val) > 0.6 else TEXT_PRIMARY)
     fig.colorbar(im, ax=ax, shrink=0.8, label="Pearson correlation")
     ax.set_title(title)
     fig.tight_layout()

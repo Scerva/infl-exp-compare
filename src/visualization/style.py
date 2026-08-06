@@ -1,27 +1,38 @@
-"""Shared matplotlib styling: a fixed, validated categorical palette and a
-few paper-figure conventions (one axis only, historical-episode shading,
-recessive gridlines) used by every chart this project produces.
+"""Shared matplotlib styling: a fixed brand palette (navy / gray / silver
+blue / brick red accent) and a few paper-figure conventions (one axis
+only, historical-episode shading, recessive gridlines, serif type) used
+by every chart this project produces.
 
-Palette is the dataviz-skill reference instance's light-mode categorical
-ramp (8 hues, CVD-safe in the documented adjacent-pair ordering) -- see
-the skill's references/palette.md. Series/family colors are assigned in
-this FIXED order project-wide so a given source family always gets the
-same color across every figure, never re-cycled per chart.
+Palette: navy is primary (used first, and for the "positive/lead" series
+in any two-series chart), gray is secondary, silver blue is tertiary, and
+a muted brick red is reserved as the accent -- used sparingly, for the
+single most important highlighted element in a chart (e.g. a
+statistically significant bar, the second line in a two-line
+comparison), never as just "the next color in rotation." Additional
+slots extend each hue's own family (a darker/lighter step) so an 8-10
+series chart stays visually coherent instead of reaching for unrelated
+hues.
 """
 from __future__ import annotations
 
 import matplotlib.pyplot as plt
 import pandas as pd
+from matplotlib.colors import LinearSegmentedColormap
+
+NAVY = "#1B2A4A"
+GRAY = "#75787B"
+SILVER_BLUE = "#8FA6BF"
+ACCENT_RED = "#8C3B34"
 
 CATEGORICAL_PALETTE = [
-    "#2a78d6",  # 1 blue
-    "#eb6834",  # 2 orange
-    "#1baf7a",  # 3 aqua
-    "#eda100",  # 4 yellow
-    "#e87ba4",  # 5 magenta
-    "#008300",  # 6 green
-    "#4a3aa7",  # 7 violet
-    "#e34948",  # 8 red
+    NAVY,        # 1 primary
+    GRAY,        # 2 secondary
+    SILVER_BLUE, # 3 tertiary
+    ACCENT_RED,  # 4 accent
+    "#3D5473",   # 5 lighter navy
+    "#A8ABAE",   # 6 lighter gray
+    "#5C7690",   # 7 darker silver blue
+    "#B06B62",   # 8 lighter red
 ]
 
 # Fixed source-family -> color assignment, used everywhere a family is plotted.
@@ -36,10 +47,23 @@ FAMILY_COLORS = {
     "communications": CATEGORICAL_PALETTE[7],
 }
 
-TEXT_PRIMARY = "#0b0b0b"
-TEXT_SECONDARY = "#52514e"
-GRID_COLOR = "#e3e2dd"
-SURFACE = "#fcfcfb"
+TEXT_PRIMARY = "#000000"
+TEXT_SECONDARY = "#4A4D50"
+GRID_COLOR = "#D9DBDC"
+SURFACE = "#FFFFFF"
+NEUTRAL_MARK = "#B7B9BB"  # non-significant / de-emphasized marks
+
+# Navy-white-red diverging colormap for correlation-style heatmaps, built
+# from the same brand colors rather than a generic default (matplotlib's
+# RdBu_r): negative = accent red, zero = white, positive = navy.
+DIVERGING_CMAP = LinearSegmentedColormap.from_list(
+    "navy_red_diverging", [ACCENT_RED, "#FFFFFF", NAVY]
+)
+
+# Serif stack for a more editorial, social-share-ready look. Georgia is
+# widely available and reads well at small preview sizes; the rest are
+# fallbacks in descending preference.
+SERIF_STACK = ["Georgia", "Palatino", "Times New Roman", "DejaVu Serif", "serif"]
 
 # Episodes worth flagging when they fall within a figure's date range;
 # rendered as light vertical spans with a small top label, never forced
@@ -56,9 +80,13 @@ HISTORICAL_EPISODES = [
 def apply_paper_style() -> None:
     plt.rcParams.update(
         {
+            "font.family": "serif",
+            "font.serif": SERIF_STACK,
+            "mathtext.fontset": "dejavuserif",
             "figure.facecolor": SURFACE,
             "axes.facecolor": SURFACE,
-            "axes.edgecolor": GRID_COLOR,
+            "axes.edgecolor": TEXT_PRIMARY,
+            "axes.linewidth": 0.9,
             "axes.grid": True,
             "grid.color": GRID_COLOR,
             "grid.linewidth": 0.6,
@@ -68,11 +96,13 @@ def apply_paper_style() -> None:
             "axes.labelcolor": TEXT_PRIMARY,
             "xtick.color": TEXT_SECONDARY,
             "ytick.color": TEXT_SECONDARY,
-            "font.size": 10,
-            "axes.titlesize": 12,
+            "font.size": 12,
+            "axes.titlesize": 17,
             "axes.titleweight": "bold",
-            "figure.dpi": 150,
-            "savefig.dpi": 150,
+            "axes.labelsize": 12.5,
+            "legend.fontsize": 10.5,
+            "figure.dpi": 200,
+            "savefig.dpi": 200,
             "savefig.facecolor": SURFACE,
         }
     )

@@ -33,7 +33,7 @@ from src.models.local_projections import local_projection_coefficients
 from src.models.registry import MACRO_CONTROL_COLUMNS, PRIMARY_MEASURES
 from src.models.regularized import leave_one_out_incremental_r2, pca_factor_scores, run_multivariate_models
 from src.utils.logging import get_logger
-from src.visualization.style import CATEGORICAL_PALETTE, apply_paper_style
+from src.visualization.style import CATEGORICAL_PALETTE, GRID_COLOR, NEUTRAL_MARK, TEXT_SECONDARY, apply_paper_style
 
 logger = get_logger(__name__)
 
@@ -207,11 +207,12 @@ def figure5_coefficients(univariate_df: pd.DataFrame) -> None:
     apply_paper_style()
     df = univariate_df.sort_values("coef")
     fig, ax = plt.subplots(figsize=(8, max(4, 0.3 * len(df))))
-    colors = [CATEGORICAL_PALETTE[0] if p < 0.05 else "#c3c2b7" for p in df["pvalue"]]
-    ax.barh(range(len(df)), df["coef"], xerr=1.96 * df["se"], color=colors, height=0.6)
+    colors = [CATEGORICAL_PALETTE[3] if p < 0.05 else NEUTRAL_MARK for p in df["pvalue"]]
+    ax.barh(range(len(df)), df["coef"], xerr=1.96 * df["se"], color=colors, height=0.6,
+            ecolor=TEXT_SECONDARY)
     ax.set_yticks(range(len(df)))
     ax.set_yticklabels(df["display_name"], fontsize=7)
-    ax.axvline(0, color="#52514e", linewidth=0.8)
+    ax.axvline(0, color=GRID_COLOR, linewidth=1.0)
     ax.set_xlabel("Coefficient (change in stance per 1 s.d. move), 95% CI; dark = p<0.05")
     ax.set_title("Univariate Standardized Regression Coefficients")
     fig.tight_layout()
@@ -226,10 +227,10 @@ def figure6_incremental_oos_r2(table7: pd.DataFrame) -> None:
         logger.warning("No incremental_oos_r2 values available; skipping Figure 6.")
         return
     fig, ax = plt.subplots(figsize=(8, max(4, 0.3 * len(df))))
-    ax.barh(range(len(df)), df["incremental_oos_r2"], color=CATEGORICAL_PALETTE[1], height=0.6)
+    ax.barh(range(len(df)), df["incremental_oos_r2"], color=CATEGORICAL_PALETTE[0], height=0.6)
     ax.set_yticks(range(len(df)))
     ax.set_yticklabels(df["display_name"], fontsize=7)
-    ax.axvline(0, color="#52514e", linewidth=0.8)
+    ax.axvline(0, color=GRID_COLOR, linewidth=1.0)
     ax.set_xlabel("Incremental out-of-sample R^2 (full Ridge model minus model without this measure)")
     ax.set_title("Incremental Out-of-Sample Predictive Contribution by Measure")
     fig.tight_layout()
@@ -248,7 +249,7 @@ def figure7_event_responses(event_df: pd.DataFrame) -> None:
         color = CATEGORICAL_PALETTE[i % len(CATEGORICAL_PALETTE)]
         ax.errorbar(sub["window_days"], sub["coef"], yerr=1.96 * sub["se"], label=measure_id,
                     color=color, marker="o", markersize=4, linewidth=1.2, capsize=3)
-    ax.axhline(0, color="#52514e", linewidth=0.8)
+    ax.axhline(0, color=GRID_COLOR, linewidth=1.0)
     ax.set_xlabel("Window (business days after release)")
     ax.set_ylabel("Coefficient: stance ~ release surprise")
     ax.set_title("Release-Window Stance Association by Measure")

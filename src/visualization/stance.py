@@ -6,7 +6,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from src.visualization.style import CATEGORICAL_PALETTE, add_episode_shading, apply_paper_style
+from src.visualization.style import CATEGORICAL_PALETTE, GRID_COLOR, add_episode_shading, apply_paper_style
 
 
 def plot_stance_over_time(documents_df: pd.DataFrame, out_path: Path, rolling_window: int = 10) -> None:
@@ -17,12 +17,12 @@ def plot_stance_over_time(documents_df: pd.DataFrame, out_path: Path, rolling_wi
 
     ax.scatter(
         relevant["event_date"], relevant["stance_score"],
-        s=8, color=CATEGORICAL_PALETTE[0], alpha=0.35, label="Document stance (dictionary model)",
+        s=8, color=CATEGORICAL_PALETTE[2], alpha=0.45, label="Document stance (dictionary model)",
     )
     rolling = relevant.set_index("event_date")["stance_score"].rolling(rolling_window, min_periods=3).mean()
-    ax.plot(rolling.index, rolling.values, color=CATEGORICAL_PALETTE[1], linewidth=2.0,
+    ax.plot(rolling.index, rolling.values, color=CATEGORICAL_PALETTE[3], linewidth=2.2,
             label=f"{rolling_window}-document rolling mean")
-    ax.axhline(0, color="#c3c2b7", linewidth=0.8, zorder=0)
+    ax.axhline(0, color=GRID_COLOR, linewidth=1.0, zorder=0)
 
     if len(relevant):
         add_episode_shading(ax, relevant["event_date"].min(), relevant["event_date"].max())
@@ -47,10 +47,11 @@ def plot_speaker_stance(documents_df: pd.DataFrame, out_path: Path, min_document
 
     fig, ax = plt.subplots(figsize=(8, max(4, 0.28 * len(stats))))
     y = range(len(stats))
-    ax.barh(y, stats["mean"], xerr=stats["std"].fillna(0), color=CATEGORICAL_PALETTE[0], alpha=0.85, height=0.6)
+    ax.barh(y, stats["mean"], xerr=stats["std"].fillna(0), color=CATEGORICAL_PALETTE[0], alpha=0.9, height=0.6,
+            ecolor=CATEGORICAL_PALETTE[1])
     ax.set_yticks(y)
     ax.set_yticklabels([f"{s} (n={int(c)})" for s, c in zip(stats.index, stats["count"])], fontsize=7)
-    ax.axvline(0, color="#c3c2b7", linewidth=0.8)
+    ax.axvline(0, color=GRID_COLOR, linewidth=1.0)
     ax.set_xlabel("Mean stance score (+ hawkish / - dovish), +/- 1 s.d.")
     ax.set_title(f"Speaker-Level Average Stance (speakers with >= {min_documents} relevant documents)")
     fig.tight_layout()
@@ -83,7 +84,7 @@ def plot_family_divergence(family_panel: pd.DataFrame, date_col: str, out_path: 
     apply_paper_style()
     fig, ax = plt.subplots(figsize=(11, 5))
     spreads = {
-        "Household - Market": (CATEGORICAL_PALETTE[2], "household_minus_market"),
+        "Household - Market": (CATEGORICAL_PALETTE[0], "household_minus_market"),
         "Professional - Market": (CATEGORICAL_PALETTE[3], "professional_minus_market"),
     }
     plotted = False
@@ -96,7 +97,7 @@ def plot_family_divergence(family_panel: pd.DataFrame, date_col: str, out_path: 
     if not plotted:
         plt.close(fig)
         return
-    ax.axhline(0, color="#c3c2b7", linewidth=0.8, zorder=0)
+    ax.axhline(0, color=GRID_COLOR, linewidth=1.0, zorder=0)
     ax.set_title("Standardized Divergence Across Expectation-Measure Families")
     ax.set_ylabel("Standardized spread (z-score units)")
     ax.legend(loc="upper left", fontsize=8, frameon=False)
