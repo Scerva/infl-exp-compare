@@ -92,7 +92,15 @@ def build_summary_matrix(
         base["permutation_importance_mean"] = np.nan
 
     if mention_counts is not None:
-        base["mention_count"] = base["display_name"].map(mention_counts).fillna(0)
+        # mention_counts must be indexed by measure_id (the caller's
+        # responsibility to aggregate raw text-mention labels into
+        # measure_id -- see scripts/06_run_models.py's
+        # MEASURE_ID_TO_MENTION_LABELS for why this can't be a naive
+        # display_name string match: a "TIPS / Breakevens" mention in
+        # text doesn't distinguish which of T5YIE/T10YIE/T5YIFR was
+        # meant, so several measure_ids legitimately share one mention
+        # count).
+        base["mention_count"] = base["measure_id"].map(mention_counts).fillna(0)
         total_mentions = mention_counts.sum() if mention_counts.sum() > 0 else np.nan
         base["mention_share"] = base["mention_count"] / total_mentions
     else:

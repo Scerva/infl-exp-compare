@@ -73,7 +73,7 @@ def test_build_summary_matrix_incorporates_mention_counts():
             "oos_r2": [-0.1],
         }
     )
-    mentions = pd.Series({"Measure X": 25})
+    mentions = pd.Series({"X": 25})  # indexed by measure_id, not display_name
     out = build_summary_matrix(univariate, mention_counts=mentions)
     assert out.iloc[0]["mention_count"] == 25
     assert out.iloc[0]["mention_share"] == 1.0
