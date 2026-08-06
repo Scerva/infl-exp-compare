@@ -33,7 +33,7 @@ from src.models.local_projections import local_projection_coefficients
 from src.models.registry import MACRO_CONTROL_COLUMNS, PRIMARY_MEASURES
 from src.models.regularized import leave_one_out_incremental_r2, pca_factor_scores, run_multivariate_models
 from src.utils.logging import get_logger
-from src.visualization.style import CATEGORICAL_PALETTE, GRID_COLOR, NEUTRAL_MARK, TEXT_SECONDARY, apply_paper_style
+from src.visualization.style import CATEGORICAL_PALETTE, GRID_COLOR, NEUTRAL_MARK, apply_paper_style
 
 logger = get_logger(__name__)
 
@@ -209,7 +209,7 @@ def figure5_coefficients(univariate_df: pd.DataFrame) -> None:
     fig, ax = plt.subplots(figsize=(8, max(4, 0.3 * len(df))))
     colors = [CATEGORICAL_PALETTE[3] if p < 0.05 else NEUTRAL_MARK for p in df["pvalue"]]
     ax.barh(range(len(df)), df["coef"], xerr=1.96 * df["se"], color=colors, height=0.6,
-            ecolor=TEXT_SECONDARY)
+            ecolor=CATEGORICAL_PALETTE[1])
     ax.set_yticks(range(len(df)))
     ax.set_yticklabels(df["display_name"], fontsize=7)
     ax.axvline(0, color=GRID_COLOR, linewidth=1.0)
