@@ -6,7 +6,12 @@ import pandas as pd
 import pytest
 
 from src.visualization.expectations import plot_correlation_heatmap, plot_series_by_family
-from src.visualization.stance import plot_mention_frequency, plot_speaker_stance, plot_stance_over_time
+from src.visualization.stance import (
+    plot_mention_frequency,
+    plot_speaker_stance,
+    plot_stance_over_time,
+    plot_stance_over_time_rescaled,
+)
 from src.visualization.style import add_episode_shading, apply_paper_style
 
 
@@ -46,6 +51,47 @@ def test_plot_stance_over_time_writes_file(tmp_path):
     )
     out = tmp_path / "stance.png"
     plot_stance_over_time(df, out)
+    assert out.exists()
+
+
+def test_plot_stance_over_time_with_fed_funds_overlay_writes_file(tmp_path):
+    df = pd.DataFrame(
+        {
+            "event_date": pd.date_range("2020-01-01", periods=20, freq="MS"),
+            "stance_score": [0.1 * (i % 3 - 1) for i in range(20)],
+            "monetary_policy_relevance": [0.5] * 20,
+        }
+    )
+    ffr = pd.DataFrame({"date": pd.date_range("2020-01-01", periods=20, freq="MS"), "value": [1.0] * 20})
+    out = tmp_path / "stance_ffr.png"
+    plot_stance_over_time(df, out, fed_funds_df=ffr)
+    assert out.exists()
+
+
+def test_plot_stance_over_time_rescaled_writes_file_and_clips(tmp_path):
+    df = pd.DataFrame(
+        {
+            "event_date": pd.date_range("2020-01-01", periods=20, freq="MS"),
+            # includes an outlier well outside the default +/-0.2 clip range
+            "stance_score": [0.1 * (i % 3 - 1) for i in range(19)] + [0.9],
+            "monetary_policy_relevance": [0.5] * 20,
+        }
+    )
+    out = tmp_path / "stance_rescaled.png"
+    plot_stance_over_time_rescaled(df, out, stance_ylim=(-0.2, 0.2))
+    assert out.exists()
+
+
+def test_plot_stance_over_time_rescaled_custom_ylim(tmp_path):
+    df = pd.DataFrame(
+        {
+            "event_date": pd.date_range("2020-01-01", periods=10, freq="MS"),
+            "stance_score": [0.05] * 10,
+            "monetary_policy_relevance": [0.5] * 10,
+        }
+    )
+    out = tmp_path / "stance_rescaled_custom.png"
+    plot_stance_over_time_rescaled(df, out, stance_ylim=(-0.5, 0.5))
     assert out.exists()
 
 

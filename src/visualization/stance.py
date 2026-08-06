@@ -61,6 +61,80 @@ def plot_stance_over_time(
     plt.close(fig)
 
 
+def plot_stance_over_time_rescaled(
+    documents_df: pd.DataFrame,
+    out_path: Path,
+    rolling_window: int = 10,
+    fed_funds_df: pd.DataFrame | None = None,
+    stance_ylim: tuple[float, float] = (-0.2, 0.2),
+) -> None:
+    """Figure 3b: same chart as plot_stance_over_time, with the stance
+    axis clipped to a fixed, readable range instead of autoscaling to
+    whatever the single most extreme document happens to be.
+
+    In the underlying data, 98% of document-level stance scores fall
+    within [-0.17, 0.16] and the entire 10-document rolling mean stays
+    within [-0.08, 0.13] -- but a handful of outlier speeches (as extreme
+    as -0.56) drag a naively autoscaled axis out to +/-0.6, which
+    flattens the actually-informative rolling-mean line into a near-
+    straight line at the scale needed to fit those outliers. Clipping to
+    a fixed +/-0.2 keeps >98% of points on-plot at a scale where the
+    rolling mean's real cyclical swings are visible, and reads
+    comparably alongside the federal funds rate axis. The <2% of points
+    outside this range are cropped, not hidden data -- see Figure 3 for
+    the unclipped version.
+    """
+    apply_paper_style()
+    fig, ax = plt.subplots(figsize=(11, 5))
+    df = documents_df.sort_values("event_date")
+    relevant = df[df["monetary_policy_relevance"] >= 0.10]
+
+    ax.scatter(
+        relevant["event_date"], relevant["stance_score"],
+        s=8, color=CATEGORICAL_PALETTE[2], alpha=0.45, label="Document stance (dictionary model)",
+        zorder=3, clip_on=True,
+    )
+    rolling = relevant.set_index("event_date")["stance_score"].rolling(rolling_window, min_periods=3).mean()
+    ax.plot(rolling.index, rolling.values, color=CATEGORICAL_PALETTE[3], linewidth=2.4,
+            label=f"{rolling_window}-document rolling mean", zorder=4)
+    ax.axhline(0, color=GRID_COLOR, linewidth=1.0, zorder=0)
+    ax.set_ylim(*stance_ylim)
+
+    if len(relevant):
+        add_episode_shading(ax, relevant["event_date"].min(), relevant["event_date"].max())
+
+    ax.set_title("Federal Reserve Hawkish/Dovish Stance Through Time (rescaled)")
+    ax.set_ylabel("Stance score (+ hawkish / - dovish)")
+
+    handles, labels = ax.get_legend_handles_labels()
+    if fed_funds_df is not None and not fed_funds_df.empty:
+        ax2 = ax.twinx()
+        ax2.plot(
+            fed_funds_df["date"], fed_funds_df["value"],
+            color=CATEGORICAL_PALETTE[0], linewidth=1.8, linestyle="--", alpha=0.9,
+            label="Effective federal funds rate (%)", zorder=2,
+        )
+        ax2.set_ylabel("Effective federal funds rate (%)")
+        ax2.set_ylim(bottom=0)
+        ax2.grid(False)
+        ax2.spines["top"].set_visible(False)
+        h2, l2 = ax2.get_legend_handles_labels()
+        handles, labels = handles + h2, labels + l2
+
+    ax.legend(handles, labels, loc="upper left", fontsize=8, frameon=False)
+    n_clipped = int(((relevant["stance_score"] < stance_ylim[0]) | (relevant["stance_score"] > stance_ylim[1])).sum())
+    if n_clipped:
+        ax.annotate(
+            f"{n_clipped} of {len(relevant)} points ({100 * n_clipped / len(relevant):.1f}%) fall outside "
+            f"[{stance_ylim[0]}, {stance_ylim[1]}] and are cropped, not omitted from the underlying data.",
+            xy=(0.5, -0.16), xycoords="axes fraction", ha="center", fontsize=7, color=CATEGORICAL_PALETTE[1],
+        )
+    fig.tight_layout()
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out_path)
+    plt.close(fig)
+
+
 def plot_speaker_stance(documents_df: pd.DataFrame, out_path: Path, min_documents: int = 8) -> None:
     apply_paper_style()
     df = documents_df[(documents_df["monetary_policy_relevance"] >= 0.10) & documents_df["speaker"].notna()]

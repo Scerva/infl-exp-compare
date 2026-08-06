@@ -32,6 +32,7 @@ from src.visualization.stance import (
     plot_mention_frequency,
     plot_speaker_stance,
     plot_stance_over_time,
+    plot_stance_over_time_rescaled,
 )
 
 logger = get_logger(__name__)
@@ -224,8 +225,11 @@ def main() -> int:
         .rename(columns={"reference_date": "date"})
         .sort_values("date")
     )
-    plot_stance_over_time(documents_df, FIGURES_DIR / "figure3_stance_over_time.png", fed_funds_df=ffr_df)
+    plot_stance_over_time(documents_df, FIGURES_DIR / "figure3_stance_over_time.png")
     logger.info("Figure 3 written.")
+
+    plot_stance_over_time_rescaled(documents_df, FIGURES_DIR / "figure3b_stance_over_time_rescaled.png", fed_funds_df=ffr_df)
+    logger.info("Figure 3b written.")
 
     plot_mention_frequency(mentions_df, FIGURES_DIR / "figure4_mention_frequency.png")
     logger.info("Figure 4 written.")
