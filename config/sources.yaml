@@ -339,11 +339,16 @@ fed_communications:
     inflation_concept: null
     frequency: "8x/year"
     units: null
-    availability_start: "1993-01-01"
+    availability_start: "1996-01-01"
     download_method: "src.data.fomc.get_minutes"
     release_timing_method: scheduled_release
     target_anchor: null
-    notes: "Retains both meeting/decision date and minutes publication date (~3 weeks later)."
+    notes: >
+      Retains both meeting/decision date and minutes publication date
+      (~3 weeks later). 1993-1995 FOMC pages exist but predate the
+      web-published "Minutes of the FOMC" HTML format used here;
+      verified empirically, not assumed. A handful of unscheduled
+      inter-meeting conference calls in any era have no minutes at all.
 
   - source_family: communications
     series_name: "FOMC Statements"
@@ -353,8 +358,13 @@ fed_communications:
     inflation_concept: null
     frequency: "8x/year"
     units: null
-    availability_start: "1994-01-01"
+    availability_start: "2000-01-01"
     download_method: "src.data.fomc.get_statements"
     release_timing_method: same_day
     target_anchor: null
+    notes: >
+      The FOMC did not issue a post-meeting statement after every
+      regular meeting until ~2000 (earlier statements were issued only
+      when there was a policy action); 1996-1999 statements are
+      therefore sparse by design, not a scraping gap.
     notes: "Standardized, cleaner robustness series vs. the noisier speech corpus."
