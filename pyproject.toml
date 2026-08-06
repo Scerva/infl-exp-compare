@@ -11,9 +11,9 @@ dependencies = [
     "lxml>=5.0",
     "openpyxl>=3.1",
     "pyarrow>=16.0",
-    "scipy>=1.12",
+    "scipy>=1.12,<1.14",
     "statsmodels>=0.14",
-    "scikit-learn>=1.4",
+    "scikit-learn>=1.4,<1.5",
     "matplotlib>=3.8",
     "plotly>=5.20",
     "python-dotenv>=1.0",
@@ -22,11 +22,20 @@ dependencies = [
     "python-dateutil>=2.9",
 ]
 
+# NOTE on the numpy/scipy/scikit-learn version ceilings above: this
+# project's [nlp] extra (torch) tops out at torch==2.2.2 on Intel macOS
+# (PyTorch dropped x86_64 macOS wheels after 2.2.x), which requires
+# numpy<2's C ABI. scipy>=1.14 and scikit-learn>=1.5 in turn require
+# numpy>=2, so installing the [nlp] extra on this platform requires the
+# whole stack pinned to the numpy<2-compatible versions above. On Linux/
+# Apple Silicon/Windows, where current torch wheels exist, these ceilings
+# can be relaxed.
 [project.optional-dependencies]
 nlp = [
-    "transformers>=4.40",
-    "torch>=2.2",
-    "sentence-transformers>=2.6",
+    "transformers>=4.40,<5.0",
+    "torch>=2.2,<2.3; platform_system == 'Darwin' and platform_machine == 'x86_64'",
+    "torch>=2.2; platform_system != 'Darwin' or platform_machine != 'x86_64'",
+    "numpy<2",
 ]
 econometrics = [
     "linearmodels>=6.0",
