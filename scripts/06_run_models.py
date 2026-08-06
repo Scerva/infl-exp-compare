@@ -207,7 +207,7 @@ def figure5_coefficients(univariate_df: pd.DataFrame) -> None:
     apply_paper_style()
     df = univariate_df.sort_values("coef")
     fig, ax = plt.subplots(figsize=(8, max(4, 0.3 * len(df))))
-    colors = [CATEGORICAL_PALETTE[3] if p < 0.05 else NEUTRAL_MARK for p in df["pvalue"]]
+    colors = [CATEGORICAL_PALETTE[0] if p < 0.05 else NEUTRAL_MARK for p in df["pvalue"]]
     ax.barh(range(len(df)), df["coef"], xerr=1.96 * df["se"], color=colors, height=0.6,
             ecolor=CATEGORICAL_PALETTE[1])
     ax.set_yticks(range(len(df)))

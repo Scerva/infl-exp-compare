@@ -9,7 +9,16 @@ import pandas as pd
 from src.visualization.style import CATEGORICAL_PALETTE, GRID_COLOR, add_episode_shading, apply_paper_style
 
 
-def plot_stance_over_time(documents_df: pd.DataFrame, out_path: Path, rolling_window: int = 10) -> None:
+def plot_stance_over_time(
+    documents_df: pd.DataFrame,
+    out_path: Path,
+    rolling_window: int = 10,
+    fed_funds_df: pd.DataFrame | None = None,
+) -> None:
+    """fed_funds_df, if given: columns [date, value] (effective federal
+    funds rate, percent), overlaid on a secondary y-axis so the stance
+    score can be read directly against the actual policy rate path.
+    """
     apply_paper_style()
     fig, ax = plt.subplots(figsize=(11, 5))
     df = documents_df.sort_values("event_date")
@@ -18,10 +27,11 @@ def plot_stance_over_time(documents_df: pd.DataFrame, out_path: Path, rolling_wi
     ax.scatter(
         relevant["event_date"], relevant["stance_score"],
         s=8, color=CATEGORICAL_PALETTE[2], alpha=0.45, label="Document stance (dictionary model)",
+        zorder=3,
     )
     rolling = relevant.set_index("event_date")["stance_score"].rolling(rolling_window, min_periods=3).mean()
     ax.plot(rolling.index, rolling.values, color=CATEGORICAL_PALETTE[3], linewidth=2.2,
-            label=f"{rolling_window}-document rolling mean")
+            label=f"{rolling_window}-document rolling mean", zorder=4)
     ax.axhline(0, color=GRID_COLOR, linewidth=1.0, zorder=0)
 
     if len(relevant):
@@ -29,7 +39,22 @@ def plot_stance_over_time(documents_df: pd.DataFrame, out_path: Path, rolling_wi
 
     ax.set_title("Federal Reserve Hawkish/Dovish Stance Through Time")
     ax.set_ylabel("Stance score (+ hawkish / - dovish)")
-    ax.legend(loc="upper left", fontsize=8, frameon=False)
+
+    handles, labels = ax.get_legend_handles_labels()
+    if fed_funds_df is not None and not fed_funds_df.empty:
+        ax2 = ax.twinx()
+        ax2.plot(
+            fed_funds_df["date"], fed_funds_df["value"],
+            color=CATEGORICAL_PALETTE[0], linewidth=1.6, linestyle="--", alpha=0.85,
+            label="Effective federal funds rate (%)", zorder=2,
+        )
+        ax2.set_ylabel("Effective federal funds rate (%)")
+        ax2.grid(False)
+        ax2.spines["top"].set_visible(False)
+        h2, l2 = ax2.get_legend_handles_labels()
+        handles, labels = handles + h2, labels + l2
+
+    ax.legend(handles, labels, loc="upper left", fontsize=8, frameon=False)
     fig.tight_layout()
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_path)

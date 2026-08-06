@@ -218,7 +218,13 @@ def main() -> int:
     logger.info("Figure 2 written.")
     plot_correlation_heatmap(t3, "Correlation Matrix: Inflation Expectations Measures", FIGURES_DIR / "table3_correlation_heatmap.png")
 
-    plot_stance_over_time(documents_df, FIGURES_DIR / "figure3_stance_over_time.png")
+    macro_df = pd.read_parquet(PROCESSED_DIR / "macro_controls.parquet")
+    ffr_df = (
+        macro_df[macro_df["series_id"] == "FED_FUNDS_EFFECTIVE"][["reference_date", "value"]]
+        .rename(columns={"reference_date": "date"})
+        .sort_values("date")
+    )
+    plot_stance_over_time(documents_df, FIGURES_DIR / "figure3_stance_over_time.png", fed_funds_df=ffr_df)
     logger.info("Figure 3 written.")
 
     plot_mention_frequency(mentions_df, FIGURES_DIR / "figure4_mention_frequency.png")
